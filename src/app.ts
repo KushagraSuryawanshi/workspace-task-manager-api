@@ -1,6 +1,7 @@
 import express from "express";
 import { notFound } from "./errors/notFound";
 import { errorHandler } from "./errors/errorHandler";
+import { authRouter } from "./modules/auth/auth.routes";
 
 export const app = express();
 
@@ -16,5 +17,7 @@ app.get("/health", (_req, res) => {
   });
 });
 
+app.use("/auth", authRouter);
+
 app.use(notFound);
-app.use(errorHandler)
+app.use(errorHandler);

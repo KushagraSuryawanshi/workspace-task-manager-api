@@ -1,4 +1,4 @@
-import z from "zod";
+import { z } from "zod";
 
 const envSchema = z.object({
   NODE_ENV: z
@@ -9,6 +9,13 @@ const envSchema = z.object({
   JWT_SECRET: z
     .string()
     .min(32, "JWT_SECRET must contain at least 32 characters"),
+  JWT_EXPIRES_IN: z
+    .string()
+    .regex(
+      /^[1-9]\d*(s|m|h|d|w)$/,
+      "JWT_EXPIRES_IN must use a format such as 30m, 1h, or 7d",
+    )
+    .default("1h"),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

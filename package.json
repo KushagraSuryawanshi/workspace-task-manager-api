@@ -2,6 +2,7 @@
   "name": "workspace-task-manager",
   "dependencies": {
     "express": "^5.2.1",
+    "jose": "^6.2.4",
     "mongoose": "^9.8.0",
     "zod": "^4.4.3"
   },
