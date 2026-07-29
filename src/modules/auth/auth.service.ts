@@ -1,7 +1,7 @@
-import { type SignupInput } from "./auth.validation";
+import { type LoginInput, type SignupInput } from "./auth.validation";
 import { UserModel } from "../users/user.model";
 import { HttpError } from "../../errors/HttpError";
-import { hashPassword } from "../../utils/password";
+import { hashPassword, verifyPassword } from "../../utils/password";
 import { signAccessToken } from "../../utils/token";
 
 export const signup = async (input: SignupInput) => {
@@ -47,6 +47,40 @@ export const signup = async (input: SignupInput) => {
       email: newUser.email,
       createdAt: newUser.createdAt,
       updatedAt: newUser.updatedAt,
+    },
+    accessToken,
+  };
+};
+
+export const login = async (input: LoginInput) => {
+  const { email, password } = input;
+  const user = await UserModel.findOne({ email }).select("+passwordHash");
+  if (!user) {
+    throw new HttpError(
+      401,
+      "INVALID_CREDENTIALS",
+      "Invalid email or password",
+    );
+  }
+  const passwordMatch = await verifyPassword(password, user.passwordHash);
+  if (!passwordMatch) {
+    throw new HttpError(
+      401,
+      "INVALID_CREDENTIALS",
+      "Invalid email or password",
+    );
+  }
+
+  const accessToken = await signAccessToken(user._id.toString());
+
+  return {
+    user: {
+      id: user._id.toString(),
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     },
     accessToken,
   };
