@@ -85,3 +85,20 @@ export const login = async (input: LoginInput) => {
     accessToken,
   };
 };
+
+export const getCurrentUser = async (userId: string) => {
+  const user = await UserModel.findById(userId);
+
+  if (!user) {
+    throw new HttpError(404, "USER_NOT_FOUND", "User not found");
+  }
+
+  return {
+    id: user._id.toString(),
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
+};
