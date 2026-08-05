@@ -53,3 +53,31 @@ export const getUserWorkspaces = async (userId: string) => {
 
   return workspaceSummaries;
 };
+
+export const getWorkspace = async (userId: string, workspaceId: string) => {
+  const membership = await MembershipModel.findOne({ userId, workspaceId });
+  if (!membership) {
+    throw new HttpError(
+      403,
+      "WORKSPACE_ACCESS_DENIED",
+      "You do not have access to this workspace",
+    );
+  }
+  const workspace = await WorkspaceModel.findById(membership.workspaceId);
+  if (!workspace) {
+    throw new HttpError(
+      404,
+      "WORKSPACE_NOT_FOUND",
+      "Workspace doesn't exist",
+    );
+  }
+
+  return {
+    id: workspace._id,
+    name: workspace.name,
+    ownerId: workspace.ownerId,
+    role: membership.role,
+    createdAt: workspace.createdAt,
+    updatedAt: workspace.updatedAt,
+  };
+};

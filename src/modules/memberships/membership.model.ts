@@ -24,5 +24,5 @@ const membershipSchema = new Schema(
 membershipSchema.index({ workspaceId: 1, userId: 1 }, { unique: true });
 membershipSchema.index({ userId: 1 });
 
-export const MembershipModel = model("Membership", membershipSchema);
+export const  MembershipModel = model("Membership", membershipSchema);
 export type Membership = InferSchemaType<typeof membershipSchema>;
