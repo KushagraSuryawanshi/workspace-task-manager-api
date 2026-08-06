@@ -1,5 +1,8 @@
 import mongoose, { Types } from "mongoose";
-import type { CreateWorkspaceInput } from "./workspace.validation";
+import type {
+  AddWorkspaceMemberInput,
+  CreateWorkspaceInput,
+} from "./workspace.validation";
 import { UserModel } from "../users/user.model";
 import { HttpError } from "../../errors/HttpError";
 import { WorkspaceModel, type Workspace } from "./workspace.model";
@@ -115,4 +118,89 @@ export const updateWorkspace = async (
     createdAt: updatedWorkspace.createdAt,
     updatedAt: updatedWorkspace.updatedAt,
   };
+};
+
+export const addWorkspaceMember = async (
+  requesterUserId: string,
+  workspaceId: string,
+  input: AddWorkspaceMemberInput,
+) => {
+  return mongoose.connection.transaction(async (session) => {
+    const membership = await MembershipModel.findOne({
+      userId: requesterUserId,
+      workspaceId,
+    }).session(session);
+    if (!membership) {
+      throw new HttpError(
+        403,
+        "WORKSPACE_ACCESS_DENIED",
+        "You do not have access to this workspace",
+      );
+    }
+
+    if (membership.role !== "ADMIN" && membership.role !== "OWNER") {
+      throw new HttpError(
+        403,
+        "INSUFFICIENT_WORKSPACE_ROLE",
+        "You must be an admin or owner to add workspace members",
+      );
+    }
+
+    if (membership.role === "ADMIN" && input.role === "ADMIN") {
+      throw new HttpError(
+        403,
+        "INSUFFICIENT_WORKSPACE_ROLE",
+        "Only a workspace owner can add an admin",
+      );
+    }
+
+    const workspace =
+      await WorkspaceModel.findById(workspaceId).session(session);
+    if (!workspace) {
+      throw new HttpError(
+        404,
+        "WORKSPACE_NOT_FOUND",
+        "Workspace doesn't exist",
+      );
+    }
+    const user = await UserModel.findOne({ email: input.email }).session(
+      session,
+    );
+    if (!user) {
+      throw new HttpError(404, "USER_NOT_FOUND", "User doesn't exist");
+    }
+
+    try {
+      const newMembership = new MembershipModel({
+        userId: user._id,
+        workspaceId: workspace._id,
+        role: input.role,
+      });
+      const newMembershipSaved = await newMembership.save({ session });
+
+      return {
+        id: newMembershipSaved._id.toString(),
+        userId: newMembership.userId.toString(),
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: newMembershipSaved.role,
+        createdAt: newMembershipSaved.createdAt,
+      };
+    } catch (error) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === 11000
+      ) {
+        throw new HttpError(
+          409,
+          "USER_ALREADY_MEMBER",
+          "user already a member of this worksapce",
+        );
+      }
+      throw error;
+    }
+  });
 };

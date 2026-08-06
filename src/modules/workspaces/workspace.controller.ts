@@ -1,12 +1,14 @@
 import type { RequestHandler } from "express";
 import { HttpError } from "../../errors/HttpError";
 import {
+  addWorkspaceMember,
   createWorkspace,
   getUserWorkspaces,
   getWorkspace,
   updateWorkspace,
 } from "./workspace.service";
 import type {
+  AddWorkspaceMemberInput,
   CreateWorkspaceInput,
   GetWorkspaceParams,
   UpdateWorkspaceInput,
@@ -97,5 +99,28 @@ export const updateWorkspaceController: RequestHandler<
   res.status(200).json({
     success: true,
     data: { workspace },
+  });
+};
+
+export const addWorkspaceMemberController: RequestHandler<
+  GetWorkspaceParams,
+  unknown,
+  AddWorkspaceMemberInput
+> = async (req, res) => {
+  if (!req.auth) {
+    throw new HttpError(
+      401,
+      "INVALID_ACCESS_TOKEN",
+      "Access token is missing or invalid",
+    );
+  }
+  const membership = await addWorkspaceMember(
+    req.auth.userId,
+    req.params.workspaceId,
+    req.body,
+  );
+  res.status(201).json({
+    success: true,
+    data: { membership },
   });
 };

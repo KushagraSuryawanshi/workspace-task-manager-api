@@ -2,11 +2,13 @@ import { Router } from "express";
 import { authenticate } from "../../middleware/authenticate";
 import { validateBody } from "../../middleware/validateBody";
 import {
+  addWorkspaceMemberSchema,
   createWorkspaceSchema,
   getWorkspaceParamsSchema,
   updateWorkspaceSchema,
 } from "./workspace.validation";
 import {
+  addWorkspaceMemberController,
   createWorkspaceController,
   getUserWorkspacesController,
   getWorkspaceController,
@@ -35,7 +37,15 @@ workspaceRouter.get(
 workspaceRouter.patch(
   "/:workspaceId",
   authenticate,
-  validateBody(updateWorkspaceSchema),
   validateParams(getWorkspaceParamsSchema),
+  validateBody(updateWorkspaceSchema),
   updateWorkspaceController,
+);
+
+workspaceRouter.post(
+  "/:workspaceId/members",
+  authenticate,
+  validateParams(getWorkspaceParamsSchema),
+  validateBody(addWorkspaceMemberSchema),
+  addWorkspaceMemberController,
 );
