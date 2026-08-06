@@ -4,10 +4,12 @@ import {
   createWorkspace,
   getUserWorkspaces,
   getWorkspace,
+  updateWorkspace,
 } from "./workspace.service";
 import type {
   CreateWorkspaceInput,
   GetWorkspaceParams,
+  UpdateWorkspaceInput,
 } from "./workspace.validation";
 
 export const createWorkspaceController: RequestHandler<
@@ -68,6 +70,30 @@ export const getWorkspaceController: RequestHandler<
   }
 
   const workspace = await getWorkspace(req.auth.userId, req.params.workspaceId);
+  res.status(200).json({
+    success: true,
+    data: { workspace },
+  });
+};
+
+export const updateWorkspaceController: RequestHandler<
+  GetWorkspaceParams,
+  unknown,
+  UpdateWorkspaceInput
+> = async (req, res) => {
+  if (!req.auth) {
+    throw new HttpError(
+      401,
+      "INVALID_ACCESS_TOKEN",
+      "Access token is missing or invalid",
+    );
+  }
+
+  const workspace = await updateWorkspace(
+    req.auth.userId,
+    req.params.workspaceId,
+    req.body.name,
+  );
   res.status(200).json({
     success: true,
     data: { workspace },

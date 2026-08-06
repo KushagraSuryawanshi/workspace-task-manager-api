@@ -65,11 +65,7 @@ export const getWorkspace = async (userId: string, workspaceId: string) => {
   }
   const workspace = await WorkspaceModel.findById(membership.workspaceId);
   if (!workspace) {
-    throw new HttpError(
-      404,
-      "WORKSPACE_NOT_FOUND",
-      "Workspace doesn't exist",
-    );
+    throw new HttpError(404, "WORKSPACE_NOT_FOUND", "Workspace doesn't exist");
   }
 
   return {
@@ -79,5 +75,44 @@ export const getWorkspace = async (userId: string, workspaceId: string) => {
     role: membership.role,
     createdAt: workspace.createdAt,
     updatedAt: workspace.updatedAt,
+  };
+};
+
+export const updateWorkspace = async (
+  userId: string,
+  workspaceId: string,
+  name: string,
+) => {
+  const membership = await MembershipModel.findOne({ userId, workspaceId });
+  if (!membership) {
+    throw new HttpError(
+      403,
+      "WORKSPACE_ACCESS_DENIED",
+      "You do not have access to this workspace",
+    );
+  }
+  if (membership.role !== "OWNER" && membership.role !== "ADMIN") {
+    throw new HttpError(
+      403,
+      "INSUFFICIENT_WORKSPACE_ROLE",
+      "You must be an admin or owner to update this workspace",
+    );
+  }
+
+  const updatedWorkspace = await WorkspaceModel.findOneAndUpdate(
+    { _id: membership.workspaceId },
+    { $set: { name } },
+    { runValidators: true, returnDocument: "after" },
+  );
+  if (!updatedWorkspace) {
+    throw new HttpError(404, "WORKSPACE_NOT_FOUND", "Workspace not found");
+  }
+
+  return {
+    id: updatedWorkspace._id,
+    name: updatedWorkspace.name,
+    ownerId: updatedWorkspace.ownerId,
+    createdAt: updatedWorkspace.createdAt,
+    updatedAt: updatedWorkspace.updatedAt,
   };
 };
